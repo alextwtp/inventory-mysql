@@ -1,7 +1,5 @@
 from sqlalchemy import text
-
-from config.database import SessionLocal
-
+from db import SessionLocal
 
 def main():
     db = SessionLocal()
@@ -12,7 +10,6 @@ def main():
         print("Database OK:", row.test_value)
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     main()

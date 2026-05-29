@@ -1,43 +1,42 @@
 from repository.excel_repository import ExcelRepository
-from openpyxl import Workbook, load_workbook
-from pathlib import Path
-import pytest
 import shutil
 
-app=ExcelRepository(path="data/inventory.xslx")
+app = ExcelRepository(path="data/inventory.xlsx")
 
 def test_read_item():
-    path="data/inventory.xlsx"
-    # 1. 先執行 load，取得真正的工作表物件 (sheet)
-    
-    work_file,work_sheet= app.load_file_and_list(path)        
-    row=6
+    path = "data/inventory.xlsx"
+    # execute the load command to obtain the actual worksheet object first.
+    _, work_sheet = app.load_file_and_list(path)        
+    row = 13
     item = app.read_item(work_sheet, row) 
-    assert item.current_qty == 10
-
-import shutil
+    assert item.current_qty == 33
 
 def test_write_item(tmp_path):
-    # 1. 準備環境 
+    # 1. Prepare the environment
     original = "data/inventory.xlsx" 
     temp_file = tmp_path/"test_write.xlsx"
     shutil.copy2(original, temp_file)
     
-    # 2. 初始化
+    # 2. initialization
     app = ExcelRepository(str(temp_file))
-    work_file,work_sheet= app.load_file_and_list(app.path)
+    work_file, work_sheet = app.load_file_and_list(app.path)
     
-    # 3. 準備寫入的 dict
-    
+    # 3. Dict to be written    
     new_values = {
-        "編號": "K007",
-        "品名": "測試商品", 
-        "目前庫存": 88
+        "Pid": "K007",
+        "Name": "Test_item", 
+        "Current_Quantity": 88
     }
     
-    # 4. 執行寫入    
-    app.write_item(work_sheet, 6, new_values)
-    
-    # 5. 驗證 (直接再讀一次第 6 列，確認資料變了)
+    # 4. Execute write 
+    app.write_item(
+        work_file,
+        work_sheet,
+        6,
+        str(temp_file),
+        new_values,
+    )
+        
+    # 5. Verify updated row data
     updated_item = app.read_item(work_sheet, 6)
-    assert updated_item.current_qty == 88    
+    assert updated_item.current_qty == 88 

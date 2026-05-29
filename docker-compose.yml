@@ -5,8 +5,10 @@ services:
     env_file:
       - .env
     ports:
+      # Map host port 3307 to MySQL container port 3306
       - "3307:3306"
     volumes:
+      # Keep MySQL data after the container is removed
       - mysql_data:/var/lib/mysql
 
   app:
@@ -17,6 +19,7 @@ services:
     depends_on:
       - mysql
     volumes:
+      # Mount local app folder into the container for development
       - ./app:/app
     working_dir: /app
     tty: true

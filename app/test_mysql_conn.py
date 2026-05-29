@@ -1,8 +1,6 @@
 import os
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-
 
 load_dotenv()
 
@@ -20,6 +18,4 @@ engine = create_engine(DATABASE_URL, echo=True)
 with engine.connect() as conn:
     result = conn.execute(text("SELECT 1 AS test_value"))
     row = result.fetchone()
-    print("Connection OK:", row.test_value)
-    #print("URL", DATABASE_URL)
-    #URL mysql+pymysql://appuser:app1234@127.0.0.1:3307/inventory_db
+    print("Connection OK:", row.test_value)    

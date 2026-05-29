@@ -1,15 +1,24 @@
 import pytest
-import requests
 import sys
+from pydantic import ValidationError
+from api.fastapi_app import InventoryRequest 
 
-def test_stock_short(client): 
 
+def test_validate_pid_success():
+    data = InventoryRequest(pid="  abc123  ", qty=1)    
+    assert data.pid == "ABC123" 
+
+def test_validate_pid_error():    
+    with pytest.raises(ValidationError):
+        InventoryRequest(pid="  ", qty=1)
+
+def test_stock_short(client):
     response = client.post(
     "api/inventory/out",
     json={
-        "pid": "UUUU",
+        "pid": "G111",      
+        "name": "Grape",
         "qty": 500,
-        "name": "USB",
         "receiver": "Alex",
         "shipper": "John"
     }
@@ -18,7 +27,6 @@ def test_stock_short(client):
     data = response.json()
     assert data["success"] is False
     assert data["error"] == "StockShortError" 
-
 
 @pytest.fixture
 def lock_excel_file():
@@ -30,29 +38,29 @@ def lock_excel_file():
     import msvcrt
 
     file_path = "data/inventory.xlsx"
-    # 用 r+ 讀寫模式開啟，確保檔案指標存在
+    # Start in r+ read/write mode to ensure archive indicators exist.
     f = open(file_path, "r+")
     try:
-        # 強制獨佔鎖定 1 個位元組（這足以讓 pandas/openpyxl 報 PermissionError）
         msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
-        print("\n[系統鎖定] 檔案已成功鎖定，準備測試 409...")
+        print("\n[System Locked]The file has been successfully locked. Preparing to test 409...")
         yield f
     finally:
-        # 測試結束，釋放鎖定並關閉
+        # Test complete, release lock and close.
         f.seek(0)
         msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
         f.close()
-        print("[系統解鎖] 鎖定已解除。")
+        print("[System Unlock] The lock has been released.")
+
 
 def test_file_inuse_error(client, lock_excel_file):   
     response = client.post(
         "api/inventory/in",
         json={
-            "pid": "UUUU",
+            "pid": "A001",
             "qty": 30,
-            "name": "USB",
+            "name": "BAG",
             "receiver": "",
-            "shipper": ""
+            "shipper": "",
         }
     )       
     assert response.status_code == 409
@@ -63,11 +71,11 @@ def test_no_item_error(client):
     response = client.post(
     "api/inventory/out",
     json={
-        "pid": "",
+        "pid": "5555",
         "qty": 30,
-        "name": "BAG",
-        "receiver": "",
-        "shipper": ""
+        "name": "SPEN",
+        "receiver": "AAAA",
+        "shipper": "BBBB"
     }
     )   
     assert response.status_code == 404
@@ -87,70 +95,75 @@ def test_negative_error(client):
     }
     )  
     assert response.status_code == 422
-    error = response.json()["detail"]         
-    assert error [0]["loc"] == ["body", "qty"]
+    error = response.json()["detail"]
+    assert error[0]["loc"] == ["body", "qty"]
 
 def test_url_error(client): 
-        test_data = {
-                "pid": "A001",
-                "qty": 50,
-                "name":"NEWMOUSE",
-                "receiver":"",
-                "shipper":"",                
-            }  
+    test_data = {
+            "pid": "A001",
+            "qty": 50,
+            "name":"NEWMOUSE",
+            "receiver":"",
+            "shipper":"",                
+        }  
 
-         # 假設正確是 /inventory/in，我們故意寫 /inventory/in_error
-        response = client.post("api/inventory/innnn", json=test_data)
-        
-        # 對於找不到的路徑，狀態碼應該是 404
-        assert response.status_code == 404     
+    # The correct URL is /inventory/in,we use an error URL for testing
+    response = client.post("api/inventory/innnn", json=test_data)           
+    assert response.status_code == 404     
        
 def test_unprocessed_error(client): 
-        test_data = {
-                "pid": "A001",
-                "qty": 50,
-                "name": 150,
-                "receiver":"",
-                "shipper":"",                
-            }  
-         
-        response = client.post("api/inventory/in", json=test_data)
-        error = response.json()["detail"]          
-        assert response.status_code == 422  
-        assert error[0]["loc"] == ["body", "name"]    
+    test_data = {
+            "pid": "W005",
+            "qty": 50,
+            "name": 150,
+            "receiver":"",
+            "shipper":"",                
+        }  
+        
+    response = client.post("api/inventory/in", json=test_data)
+    error = response.json()["detail"]          
+    assert response.status_code == 422  
+    assert error[0]["loc"] == ["body", "name"]    
                                                          
 def test_multiple_errors(client):
-    # send an emytp JSON data
+    # send an emytp JSON data.
     response = client.post("api/inventory/in", json={})
 
     assert response.status_code == 422
     errors = response.json()["detail"]     
     
-    # make sure there are 2 errors
-    assert len(errors) == 2 
-
-    #不要太依賴 errors 順序
+    # Make sure there are two validation errors.
+    assert len(errors) == 2    
 
     locs = [error["loc"] for error in errors]
     assert ["body", "pid"] in locs
     assert ["body", "qty"] in locs
 
-    # if depend on errors' priority    
-    # # make sure the first error is related to "pid"
-    # assert errors[0]["loc"] == ["body", "pid"]
-    
-    # # make sure the second error is related to "qty"
-    # assert errors[1]["loc"] == ["body", "qty"]
-
 def test_inventory_in_success(client):
     response = client.post(
         "api/inventory/in",
         json={
-            "pid": "A001",
+            "pid": "S023",          
+            "name": "Strawberry",
             "qty": 10,
-            "name": "BAG",
             "receiver": "",
             "shipper": ""
+        }
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    
+def test_inventory_out_success(client):
+    response = client.post(
+        "api/inventory/out",
+        json={
+            "pid": "C001",            
+            "name": "Cherry",
+            "qty": 3,
+            "receiver": "AAAA",
+            "shipper": "BBBB"
         }
     )
 

@@ -1,5 +1,5 @@
-from config.database import SessionLocal
-from repository.mysql_models import Inventory
+from db import SessionLocal
+from mysql_models import Inventory
 
 
 def main():
@@ -8,12 +8,13 @@ def main():
     try:
         # INSERT
         item = Inventory(
-            pid="P003",
+            pid="b789",
             item_name="Test Item",
             qty=10,
-            location="A1",
+            receiver="James",
+            shipper="Tommy",
         )
-
+        
         db.add(item)
         db.commit()
         db.refresh(item)
@@ -21,14 +22,13 @@ def main():
         print("Inserted item id:", item.id)
 
         # SELECT
-        found = db.query(Inventory).filter(Inventory.pid == "P003").first()
+        found = db.query(Inventory).filter(Inventory.pid == "A456").first()
 
         if found:
             print("Found:")
             print("pid:", found.pid)
             print("item_name:", found.item_name)
-            print("qty:", found.qty)
-            print("location:", found.location)
+            print("qty:", found.qty)           
         else:
             print("Item not found")
 
@@ -38,7 +38,6 @@ def main():
 
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     main()

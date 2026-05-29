@@ -1,19 +1,20 @@
 from db import engine, SessionLocal, Base
-from models import Item
+from mysql_models import Inventory
 
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
 
-
 def insert_sample_item():
     db = SessionLocal()
 
     try:
-        item = Item(
-            item_no="A001",
-            name="Keyboard",
-            quantity=10,
+        item = Inventory(
+            pid="N001",
+            item_name="Nance",
+            qty=10,
+            receiver="Alex",
+            shipper="Tommy",
         )
 
         db.add(item)
@@ -21,7 +22,7 @@ def insert_sample_item():
         db.refresh(item)
 
         print("Inserted item:")
-        print(item.id, item.item_no, item.name, item.quantity)
+        print(item.pid, item.item_name, item.qty, item.receiver, item.shipper)
 
     except Exception as e:
         db.rollback()
@@ -30,20 +31,17 @@ def insert_sample_item():
     finally:
         db.close()
 
-
 def query_items():
     db = SessionLocal()
 
     try:
-        items = db.query(Item).all()
-
+        items = db.query(Inventory).all()
         print("Current items:")
         for item in items:
-            print(item.id, item.item_no, item.name, item.quantity)
+            print(item.pid, item.item_name, item.qty, item.receiver, item.shipper)
 
     finally:
-        db.close()
-
+        db.close() 
 
 if __name__ == "__main__":
     create_tables()
