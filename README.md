@@ -15,6 +15,20 @@ This project demonstrates a layered backend design with API, service, repository
 - Automated tests with pytest
 - Basic GUI client for demonstration purposes
 
+## Architecture
+
+```text
+GUI Client
+    ↓
+FastAPI API Layer
+    ↓
+Service Layer
+    ↓
+Repository Layer
+    ↓
+MySQL Database / Excel File
+```
+
 ## Project Structure
 
 ```text
