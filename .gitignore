@@ -31,3 +31,6 @@ venv/
 
 # Windows WSL metadata
 *:Zone.Identifier
+
+# Temporary files
+.tmp
