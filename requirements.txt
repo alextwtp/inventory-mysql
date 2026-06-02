@@ -5,5 +5,6 @@ cryptography
 httpx
 fastapi
 pytest
+pytest-cov
 uvicorn
 openpyxl
