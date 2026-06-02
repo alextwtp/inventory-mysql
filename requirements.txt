@@ -6,3 +6,4 @@ httpx
 fastapi
 pytest
 uvicorn
+openpyxl
