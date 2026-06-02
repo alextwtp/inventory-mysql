@@ -3,3 +3,6 @@ pymysql
 python-dotenv
 cryptography
 httpx
+fastapi
+pytest
+uvicorn
