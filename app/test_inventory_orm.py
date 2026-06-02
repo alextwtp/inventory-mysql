@@ -8,11 +8,11 @@ def main():
     try:
         # INSERT
         item = Inventory(
-            pid="b789",
-            item_name="Test Item",
-            qty=10,
-            receiver="James",
-            shipper="Tommy",
+            pid="C789",
+            item_name="DUMMY",
+            qty=30,
+            receiver="LEE",
+            shipper="CHAO",
         )
         
         db.add(item)

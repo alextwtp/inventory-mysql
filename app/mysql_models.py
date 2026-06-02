@@ -17,7 +17,7 @@ class Inventory(Base):
     )    
     item_name = Column(String(100), nullable=False)
     qty = Column(Integer, nullable=False, default=0)
-    receiver = Column(String(100), nullable=False)    
+    receiver = Column(String(100), nullable=False)    -
     shipper = Column(String(100), nullable=False)    
 
     # Validate the pid and return upper case for it   
