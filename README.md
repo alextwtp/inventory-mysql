@@ -167,7 +167,7 @@ Tests avoid relying on complete platform-specific error messages because Windows
 
 ### Known Issue: Excel File Lock Detection under WSL
 
-When running this project inside WSL while `inventory.xlsx` is open in Windows Excel, the application may not reliably detect that the file is already in use.
+When running this project inside WSL while `sample_inventory.xlsx` is open in Windows Excel, the application may not reliably detect that the file is already in use.
 
 This is because Windows Excel file locking may not be visible to the Linux/WSL process.
 

@@ -1,10 +1,10 @@
 from repository.excel_repository import ExcelRepository
 import shutil
 
-app = ExcelRepository(path="data/inventory.xlsx")
+app = ExcelRepository(path="data/sample_inventory.xlsx")
 
 def test_read_item():
-    path = "data/inventory.xlsx"
+    path = "data/sample_inventory.xlsx"
     # execute the load command to obtain the actual worksheet object first.
     _, work_sheet = app.load_file_and_list(path)        
     row = 13
@@ -13,7 +13,7 @@ def test_read_item():
 
 def test_write_item(tmp_path):
     # 1. Prepare the environment
-    original = "data/inventory.xlsx" 
+    original = "data/sample_inventory.xlsx" 
     temp_file = tmp_path/"test_write.xlsx"
     shutil.copy2(original, temp_file)
     

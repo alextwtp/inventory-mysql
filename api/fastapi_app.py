@@ -26,12 +26,12 @@ class InventoryRequest(BaseModel):
     receiver: Optional[str] = None
     shipper: Optional[str] = None    
 
-    @field_validator("pid")
+    @field_validator("pid")  
     @classmethod
     def validate_and_upper_pid(cls, v: str) -> str:
-        # 1. Remove leading and trailing whitespace
+        # 1. Remove leading and trailing whitespace     app1234
         cleaned_v = v.strip()
-        
+          
         # 2. Check if it is an empty string
         if not cleaned_v:
             raise ValueError("PID cannot consist entirely of blank characters.")

@@ -19,7 +19,7 @@ def test_stock_short(client):
         "pid": "G111",      
         "name": "Grape",
         "qty": 500,
-        "receiver": "Alex",
+        "receiver": "Shen",
         "shipper": "John"
     }
 )   
@@ -37,7 +37,7 @@ def lock_excel_file():
 
     import msvcrt
 
-    file_path = "data/inventory.xlsx"
+    file_path = "data/sample_inventory.xlsx"
     # Start in r+ read/write mode to ensure archive indicators exist.
     f = open(file_path, "r+")
     try:
@@ -74,8 +74,8 @@ def test_no_item_error(client):
         "pid": "5555",
         "qty": 30,
         "name": "SPEN",
-        "receiver": "AAAA",
-        "shipper": "BBBB"
+        "receiver": "Tony",
+        "shipper": "Tommy"
     }
     )   
     assert response.status_code == 404
@@ -162,8 +162,8 @@ def test_inventory_out_success(client):
             "pid": "C001",            
             "name": "Cherry",
             "qty": 3,
-            "receiver": "AAAA",
-            "shipper": "BBBB"
+            "receiver": "Alex",
+            "shipper": "Bob"
         }
     )
 

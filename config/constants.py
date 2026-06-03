@@ -4,7 +4,7 @@
 # =========================
 
 
-MAIN_FILENAME = "inventory.xlsx"     # Excel file name
+MAIN_FILENAME = "sample_inventory.xlsx"     # Excel file name
 LAST_BACKUP = "last_backup.xlsx"
 SHEET_NAME = "Inventory"             # Name of work_sheet
 DATE_FMT = "%Y-%m-%d %H:%M:%S"       # Time format
