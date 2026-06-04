@@ -1,3 +1,7 @@
+# Inventory MySQL
+
+![CI](https://github.com/alextwtp/inventory-mysql/actions/workflows/ci.yml/badge.svg)
+
 # Inventory Management API
 
 A Python-based inventory management system built with FastAPI, SQLAlchemy, MySQL, Docker Compose, and pytest.
