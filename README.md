@@ -223,14 +223,15 @@ Planned:
 
 ## Testing and CI
 
-This project uses GitHub Actions to run automated tests on every push and pull request to the master branch.
+This project uses GitHub Actions to run automated tests on every push and pull request to the `master` branch.
 
 The CI workflow performs the following steps:
 
-1. Check out the source code
-2. Set up Python 3.10
-3. Install project dependencies
-4. Run pytest with coverage
-5. Fail the workflow if test coverage is below 80%
+1. Checks out the source code
+2. Sets up Python 3.10 and 3.11 using a matrix strategy
+3. Installs project dependencies from `requirements.txt`
+4. Runs automated tests with `pytest`
+5. Generates a coverage report with `pytest-cov`
+6. Fails the workflow if test coverage is below 80%
 
-Current local test coverage target: 80%+
+Current test coverage is approximately 87%.
