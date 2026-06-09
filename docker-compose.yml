@@ -18,9 +18,9 @@ services:
       - .env
     depends_on:
       - mysql
-    volumes:
-      # Mount local app folder into the container for development
-      - ./app:/app
+    # volumes:
+    #   # Mount local app folder into the container for development
+    #   - ./app:/app
     working_dir: /app
     tty: true
     stdin_open: true

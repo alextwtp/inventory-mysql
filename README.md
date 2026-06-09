@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/alextwtp/inventory-mysql/actions/workflows/ci.yml/badge.svg)
 
-# Inventory Management API
+## Inventory Management API
 
 A Python-based inventory management system built with FastAPI, SQLAlchemy, MySQL, Docker Compose, and pytest.
 
@@ -12,15 +12,15 @@ The project also includes a lightweight Tkinter GUI client for demonstration pur
 
 ## Features
 
-- FastAPI REST API
-- MySQL database integration
-- SQLAlchemy ORM
-- Docker Compose environment
-- Stock-in and stock-out inventory operations
-- Business-rule validation and error handling
-- Automated tests with pytest
-- Basic Tkinter GUI client for demonstration purposes
-- Sample Excel inventory file for local testing
+* FastAPI REST API
+* MySQL database integration
+* SQLAlchemy ORM
+* Docker Compose environment
+* Stock-in and stock-out inventory operations
+* Business-rule validation and error handling
+* Automated tests with pytest
+* Basic Tkinter GUI client for demonstration purposes
+* Sample Excel inventory file for local testing
 
 ## Architecture
 
@@ -41,7 +41,7 @@ MySQL Database / Excel File
 ```text
 inventory-mysql/
 ├── api/                 # FastAPI API layer
-├── app/                 # Application entry point
+├── app/                 # Application entry point and DB check scripts
 ├── config/              # Configuration files
 ├── core/                # Business logic and domain models
 ├── data/                # Sample Excel data files
@@ -62,14 +62,14 @@ inventory-mysql/
 
 For local development:
 
-- Python 3.10+
-- MySQL
-- pip
+* Python 3.10+
+* MySQL
+* pip
 
 For Docker-based execution:
 
-- Docker
-- Docker Compose
+* Docker
+* Docker Compose
 
 ## Environment Setup
 
@@ -85,18 +85,6 @@ The `.env` file is ignored by Git and should not be committed.
 
 ```bash
 pip install -r requirements.txt
-```
-
-## Run Tests
-
-```bash
-pytest -q
-```
-
-Current test status:
-
-```text
-All tests are currently passing.
 ```
 
 ## Run API Locally
@@ -155,6 +143,75 @@ To stop services:
 docker compose down
 ```
 
+## Testing and CI
+
+This project uses GitHub Actions to run automated tests on every push and pull request to the `master` branch.
+
+The CI workflow performs the following steps:
+
+1. Checks out the source code
+2. Sets up Python 3.10 and 3.11 using a matrix strategy
+3. Installs project dependencies from `requirements.txt`
+4. Runs automated tests with `pytest`
+5. Generates a coverage report with `pytest-cov`
+6. Fails the workflow if test coverage is below 80%
+
+Run the official pytest test suite from the project root:
+
+```bash
+pytest -q
+```
+
+Current test status:
+
+```text
+41 passed, 1 skipped
+Total coverage: 87%
+```
+
+The skipped test is for Windows-only file locking behavior and is expected when running on Ubuntu or WSL.
+
+GUI-related modules and local file-system dependent modules are excluded from coverage calculation because the main project focus is backend logic, API behavior, repository behavior, and automated testing.
+
+## Manual DB Check
+
+The following scripts are manual database check tools.
+They are used to verify MySQL connection, database access, and SQLAlchemy ORM behavior.
+
+These scripts are not part of the official pytest test suite.
+
+Start the MySQL container from the project root:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+Run manual DB checks:
+
+```bash
+cd app
+python3 check_mysql_conn.py
+python3 check_database.py
+python3 check_inventory_orm.py
+```
+
+## DB Host Rule
+
+When running Python directly from WSL or VS Code terminal:
+
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3307
+```
+
+When running Python inside the Docker app container:
+
+```env
+DB_HOST=mysql
+DB_PORT=3306
+```
+
 ## Sample Data
 
 A sample Excel file is provided for local testing:
@@ -179,20 +236,14 @@ File-in-use detection works as expected when the application is run directly on 
 
 ## Tech Stack
 
-- Python
-- FastAPI
-- SQLAlchemy
-- MySQL
-- PyMySQL
-- Docker Compose
-- pytest
-- Tkinter
-
-## Test Coverage
-
-Current test coverage is about 87%.
-
-GUI-related files are excluded from coverage because the main project focus is backend logic, API behavior, repository behavior, and automated testing.
+* Python
+* FastAPI
+* SQLAlchemy
+* MySQL
+* PyMySQL
+* Docker Compose
+* pytest
+* Tkinter
 
 ## Project Status
 
@@ -200,42 +251,21 @@ Current version: active development / pre-release
 
 Completed:
 
-- Layered backend structure
-- FastAPI endpoints
-- MySQL integration
-- SQLAlchemy model
-- Docker Compose environment
-- pytest test suite
-- Sample inventory data
-- Basic GUI client
-
-Planned:
-
-- GitHub Actions CI/CD pipeline
-- Docker Hub image publishing
-- AWS S3 file storage support
-- Additional database integration tests
-- GUI design improvements
+* Layered backend structure
+* FastAPI endpoints
+* MySQL integration
+* SQLAlchemy model
+* Docker Compose environment
+* GitHub Actions CI workflow
+* pytest test suite
+* Sample inventory data
+* Basic GUI client
+* Manual DB check scripts
 
 ## Future Improvements
 
-- Add GitHub Actions CI/CD pipeline
-- Add Docker Hub image publishing
-- Add AWS S3 file storage support
-- Add more database integration tests
-- Improve GUI design
-
-## Testing and CI
-
-This project uses GitHub Actions to run automated tests on every push and pull request to the `master` branch.
-
-The CI workflow performs the following steps:
-
-1. Checks out the source code
-2. Sets up Python 3.10 and 3.11 using a matrix strategy
-3. Installs project dependencies from `requirements.txt`
-4. Runs automated tests with `pytest`
-5. Generates a coverage report with `pytest-cov`
-6. Fails the workflow if test coverage is below 80%
-
-Current test coverage is approximately 87%.
+* Add Docker Hub image publishing
+* Add AWS S3 file storage support
+* Add more database integration tests
+* Improve GUI design
+* Add deployment documentation

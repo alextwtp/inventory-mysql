@@ -4,11 +4,14 @@ from mysql_models import Inventory
 
 def main():
     db = SessionLocal()
+    TEST_PID = "C719"
+    db.query(Inventory).filter(Inventory.pid == TEST_PID).delete()
+    db.commit()
 
     try:
         # INSERT
         item = Inventory(
-            pid="C789",
+            pid=TEST_PID,
             item_name="DUMMY",
             qty=30,
             receiver="LEE",
@@ -22,7 +25,7 @@ def main():
         print("Inserted item id:", item.id)
 
         # SELECT
-        found = db.query(Inventory).filter(Inventory.pid == "A456").first()
+        found = db.query(Inventory).filter(Inventory.pid == TEST_PID).first()
 
         if found:
             print("Found:")
