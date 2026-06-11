@@ -2,84 +2,66 @@
 
 ![CI](https://github.com/alextwtp/inventory-mysql/actions/workflows/ci.yml/badge.svg)
 
-## Inventory Management API
 
-A Python-based inventory management system built with FastAPI, SQLAlchemy, MySQL, Docker Compose, and pytest.
+# Inventory Management System
 
-This project demonstrates a layered backend design with API, service, repository, and database layers. It supports stock-in and stock-out operations, business-rule validation, database integration, and automated testing.
+A lightweight inventory management system for daily stock IN / OUT operations.
 
-The project also includes a lightweight Tkinter GUI client for demonstration purposes. The GUI calls the FastAPI backend, while the main business logic remains in the service and repository layers.
+This project started as a small internal inventory tool for real operational use in a small business environment. The first working version was built with a GUI and Excel-based storage. It was later extended with FastAPI, MySQL, Docker Compose, automated tests, and GitHub Actions CI to make the backend workflow more maintainable and production-oriented.
+
+---
 
 ## Features
 
-* FastAPI REST API
-* MySQL database integration
-* SQLAlchemy ORM
-* Docker Compose environment
-* Stock-in and stock-out inventory operations
-* Business-rule validation and error handling
-* Automated tests with pytest
-* Basic Tkinter GUI client for demonstration purposes
-* Sample Excel inventory file for local testing
+* Inventory IN / OUT operations
+* Excel-based inventory storage
+* GUI client for daily operation
+* FastAPI backend APIs
+* MySQL integration with SQLAlchemy
+* Docker Compose environment for MySQL
+* Unit tests with pytest
+* GitHub Actions CI for automated testing
+* Sample inventory file for testing and demo usage
 
-## Architecture
-
-```text
-GUI Client
-    ↓
-FastAPI API Layer
-    ↓
-Service Layer
-    ↓
-Repository Layer
-    ↓
-MySQL Database / Excel File
-```
+---
 
 ## Project Structure
 
 ```text
 inventory-mysql/
-├── api/                 # FastAPI API layer
-├── app/                 # Application entry point and DB check scripts
-├── config/              # Configuration files
-├── core/                # Business logic and domain models
-├── data/                # Sample Excel data files
-├── repository/          # Database and Excel repository layer
-├── scripts/             # Utility scripts
-├── tests/               # Test cases using pytest
-├── ui/                  # GUI-related files
+├── app/
+│   ├── fastapi_app.py
+│   ├── gui_app.py
+│   ├── inventory_service.py
+│   ├── excel_repository.py
+│   ├── mysql_models.py
+│   ├── db.py
+│   └── ...
+├── tests/
+│   ├── test_service.py
+│   ├── test_api.py
+│   └── ...
+├── sample_inventory.xlsx
+├── requirements.txt
 ├── docker-compose.yml
 ├── Dockerfile
-├── pytest.ini
-├── requirements.txt
-├── run_api.py
-├── run_gui.py
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 └── README.md
 ```
 
+---
+
 ## Requirements
 
-For local development:
-
 * Python 3.10+
-* MySQL
-* pip
-
-For Docker-based execution:
-
+* MySQL 8.x
 * Docker
 * Docker Compose
+* pip
 
-## Environment Setup
-
-Create a `.env` file based on `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-The `.env` file is ignored by Git and should not be committed.
+---
 
 ## Install Dependencies
 
@@ -87,185 +69,302 @@ The `.env` file is ignored by Git and should not be committed.
 pip install -r requirements.txt
 ```
 
-## Run API Locally
+---
 
-```bash
-python run_api.py
+## Environment Variables
+
+Create a `.env` file if running with MySQL or Docker Compose.
+
+Example:
+
+```env
+DB_HOST=localhost
+DB_PORT=3307
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=inventory_db
 ```
 
-Then open the FastAPI documentation:
+When running inside Docker Compose, MySQL uses port `3306` internally.
+
+When connecting from the host machine, use port `3307`.
+
+---
+
+## Run FastAPI Server
+
+```bash
+uvicorn app.fastapi_app:app --reload
+```
+
+Then open:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+---
 
 ## API Endpoints
 
-### Stock In
+### Inventory IN
 
-```text
+```http
 POST /api/inventory/in
 ```
 
-### Stock Out
+Example request:
 
-```text
+```json
+{
+  "pid": "P001",
+  "qty": 10,
+  "shipper": "ABC Supplier"
+}
+```
+
+### Inventory OUT
+
+```http
 POST /api/inventory/out
 ```
 
-## Run GUI
+Example request:
+
+```json
+{
+  "pid": "P001",
+  "qty": 3,
+  "receiver": "Customer A"
+}
+```
+
+---
+
+## Expected API Response
+
+Successful response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "pid": "P001",
+    "current_qty": 17
+  },
+  "error": null
+}
+```
+
+Failed response example:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "ITEM_NOT_FOUND",
+    "message": "Item not found"
+  }
+}
+```
+
+---
+
+## Run GUI Client
+
+Start the FastAPI server first:
 
 ```bash
-python run_gui.py
+uvicorn app.fastapi_app:app --reload
 ```
 
-The GUI is a lightweight client that calls the FastAPI backend.
-
-The main business logic is handled by the service and repository layers.
-
-## Run with Docker Compose
-
-Build and start the services:
+Then run the GUI client:
 
 ```bash
-docker compose up --build
+python3 ui/gui_app.py
 ```
 
-Then open the FastAPI documentation:
+The GUI sends requests to the FastAPI backend.
 
-```text
-http://127.0.0.1:8000/docs
-```
+---
 
-To stop services:
+## Run Official Tests
 
-```bash
-docker compose down
-```
-
-## Testing and CI
-
-This project uses GitHub Actions to run automated tests on every push and pull request to the `master` branch.
-
-The CI workflow performs the following steps:
-
-1. Checks out the source code
-2. Sets up Python 3.10 and 3.11 using a matrix strategy
-3. Installs project dependencies from `requirements.txt`
-4. Runs automated tests with `pytest`
-5. Generates a coverage report with `pytest-cov`
-6. Fails the workflow if test coverage is below 80%
-
-Run the official pytest test suite from the project root:
+Run all tests:
 
 ```bash
 pytest -q
 ```
 
-Current test status:
+Run tests with coverage:
 
-```text
-41 passed, 1 skipped
-Total coverage: 87%
+```bash
+pytest --cov=app --cov-report=term-missing
 ```
 
-The skipped test is for Windows-only file locking behavior and is expected when running on Ubuntu or WSL.
+Expected result:
 
-GUI-related modules and local file-system dependent modules are excluded from coverage calculation because the main project focus is backend logic, API behavior, repository behavior, and automated testing.
+```text
+All tests passed
+```
 
-## Manual DB Check
+---
 
-The following scripts are manual database check tools.
-They are used to verify MySQL connection, database access, and SQLAlchemy ORM behavior.
+## Run MySQL with Docker Compose
 
-These scripts are not part of the official pytest test suite.
-
-Start the MySQL container from the project root:
+Start MySQL container:
 
 ```bash
 docker compose up -d
+```
+
+Check running containers:
+
+```bash
 docker compose ps
 ```
 
-Run manual DB checks:
+Stop containers:
 
 ```bash
-cd app
-python3 check_mysql_conn.py
-python3 check_database.py
-python3 check_inventory_orm.py
+docker compose down
 ```
 
-## DB Host Rule
+Remove containers and database volume:
 
-When running Python directly from WSL or VS Code terminal:
+```bash
+docker compose down -v
+```
+
+---
+
+## Manual Database Check Scripts
+
+Run MySQL connection test:
+
+```bash
+python3 app/check_mysql_conn.py
+```
+
+Run database check:
+
+```bash
+python3 app/check_database.py
+```
+
+Run ORM check:
+
+```bash
+python3 app/check_inventory_orm.py
+```
+
+Expected result:
+
+```text
+Database connection successful
+Table created or verified successfully
+ORM operation completed successfully
+```
+
+---
+
+## MySQL Connection Notes
+
+For host machine connection:
 
 ```env
-DB_HOST=127.0.0.1
+DB_HOST=localhost
 DB_PORT=3307
 ```
 
-When running Python inside the Docker app container:
+For container-to-container connection:
 
 ```env
 DB_HOST=mysql
 DB_PORT=3306
 ```
 
-## Sample Data
-
-A sample Excel file is provided for local testing:
+Workbench connection example:
 
 ```text
-data/sample_inventory.xlsx
+Host: 127.0.0.1
+Port: 3307
+User: root
+Database: inventory_db
 ```
 
-This file contains demo inventory records only and does not include confidential data.
+---
 
-## Platform Notes
+## Sample Inventory File
 
-Tests avoid relying on complete platform-specific error messages because Windows and Linux may return slightly different system-level messages.
+A sample Excel file is provided for testing and demo usage:
 
-### Known Issue: Excel File Lock Detection under WSL
+```text
+sample_inventory.xlsx
+```
 
-When running this project inside WSL while `sample_inventory.xlsx` is open in Windows Excel, the application may not reliably detect that the file is already in use.
+The sample file is safe to upload to GitHub because it does not contain private or sensitive data.
 
-This is because Windows Excel file locking may not be visible to the Linux/WSL process.
+---
 
-File-in-use detection works as expected when the application is run directly on Windows.
+## GitHub Actions CI
 
-## Tech Stack
+This project uses GitHub Actions to run automated tests.
 
-* Python
-* FastAPI
-* SQLAlchemy
-* MySQL
-* PyMySQL
-* Docker Compose
-* pytest
-* Tkinter
+The CI workflow runs when code is pushed to GitHub or when a pull request is created.
 
-## Project Status
+Typical CI steps:
 
-Current version: active development / pre-release
+```text
+1. Checkout source code
+2. Set up Python
+3. Install dependencies
+4. Run pytest
+```
 
-Completed:
+Expected result:
 
-* Layered backend structure
-* FastAPI endpoints
-* MySQL integration
-* SQLAlchemy model
-* Docker Compose environment
-* GitHub Actions CI workflow
-* pytest test suite
-* Sample inventory data
-* Basic GUI client
-* Manual DB check scripts
+```text
+All tests passed
+CI completed successfully
+```
 
-## Future Improvements
+---
 
-* Add Docker Hub image publishing
-* Add AWS S3 file storage support
-* Add more database integration tests
-* Improve GUI design
-* Add deployment documentation
+## Current Status
+
+* GUI-based inventory tool: completed and used as the initial working version
+* Excel-based inventory storage: completed
+* FastAPI backend API: completed
+* GUI-to-API integration: completed
+* Unit tests: completed
+* MySQL basic integration: completed
+* Docker Compose MySQL environment: completed
+* GitHub Actions CI: completed
+* Dockerized application runtime: optional next step
+
+---
+
+## Technical Highlights
+
+This project demonstrates a practical backend workflow based on a small real-world inventory use case.
+
+Main engineering points include:
+
+* Service / repository separation
+* Dependency injection
+* API request and response design
+* Centralized error handling
+* Unit testing with pytest
+* MySQL integration with SQLAlchemy
+* Docker Compose for local database environment
+* GitHub Actions for CI automation
+
+The goal is to keep the system lightweight while showing a clear path from a simple desktop tool to a more structured backend service.
+
+---
+
+## License
+
+No license specified.
