@@ -368,3 +368,31 @@ The goal is to keep the system lightweight while showing a clear path from a sim
 ## License
 
 No license specified.
+
+## Docker Hub Image Verification
+
+The Docker image has been published to Docker Hub:
+
+```bash
+docker pull alextwtpyeh/inventory-mysql:latest
+```
+
+Basic runtime verification:
+
+```bash
+docker run --rm alextwtpyeh/inventory-mysql:latest python --version
+```
+
+Run the project test suite inside the Docker image:
+
+```bash
+docker run --rm alextwtpyeh/inventory-mysql:latest pytest -q
+```
+
+Expected result:
+
+```text
+41 passed, 1 skipped
+Required test coverage of 80% reached
+Total coverage: 87%
+```
