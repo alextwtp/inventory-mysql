@@ -396,3 +396,23 @@ Expected result:
 Required test coverage of 80% reached
 Total coverage: 87%
 ```
+
+## CI/CD and DockerHub Deployment
+
+This project uses GitHub Actions for continuous integration and Docker image publishing.
+
+On each push or pull request to the `master` branch, the workflow runs the test suite with coverage checks on Python 3.10 and Python 3.11.
+
+When changes are pushed to the `master` branch and all tests pass, GitHub Actions builds the Docker image and pushes it to DockerHub as:
+
+```bash
+alextwtpyeh/inventory-mysql:latest
+
+```
+
+DockerHub credentials are not stored in the repository. They are stored securely as GitHub repository secrets:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+The workflow references these secrets during the DockerHub login step. This prevents sensitive credentials from being committed to source control.
