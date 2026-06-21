@@ -416,3 +416,23 @@ DockerHub credentials are not stored in the repository. They are stored securely
 - `DOCKERHUB_TOKEN`
 
 The workflow references these secrets during the DockerHub login step. This prevents sensitive credentials from being committed to source control.
+
+## Security and Deployment Notes
+
+This project does not commit real runtime credentials to the repository.
+
+* Real environment variables are stored in `.env`, which is excluded by `.gitignore`.
+* `.env.example` is provided as a safe template for local setup.
+* Real Excel data files are ignored by default.
+* `data/sample_inventory.xlsx` is included only as a safe sample file.
+* DockerHub credentials are stored as GitHub repository secrets and referenced by the GitHub Actions workflow.
+* The Docker image build and push job runs only after tests pass and only on pushes to the `master` branch.
+
+The deployment setup was verified with Docker Compose:
+
+* Python app container build
+* MySQL 8.4 container startup
+* app-to-MySQL connection check
+* basic database check
+* ORM insert/query check
+* pytest with coverage gate
