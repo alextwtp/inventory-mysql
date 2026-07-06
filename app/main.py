@@ -1,49 +1,113 @@
-from db import engine, SessionLocal, Base
-from mysql_models import Inventory
+from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from app.db import Base, SessionLocal, engine
+from app.mysql_models import Inventory  # noqa: F401 - register model with Base.metadata
+from core.exceptions import AppError
+from core.inventory_mysql_service import InventoryMySQLService
+from core.item import Item
+from repository.mysql_repository import MySQLRepository
 
 
-def create_tables():
-    Base.metadata.create_all(bind=engine)
+app = FastAPI(title="Inventory MySQL API")
 
-def insert_sample_item():
+
+class InventoryRequest(BaseModel):
+    pid: str
+    name: str = ""
+    qty: int
+    receiver: str = ""
+    shipper: str = ""
+
+
+def get_db():
     db = SessionLocal()
-
     try:
-        item = Inventory(
-            pid="N001",
-            item_name="Nance",
-            qty=10,
-            receiver="Alex",
-            shipper="Tommy",
-        )
-
-        db.add(item)
-        db.commit()
-        db.refresh(item)
-
-        print("Inserted item:")
-        print(item.pid, item.item_name, item.qty, item.receiver, item.shipper)
-
-    except Exception as e:
-        db.rollback()
-        print("Error:", e)
-
+        yield db
     finally:
         db.close()
 
-def query_items():
-    db = SessionLocal()
+
+def get_service(db: Session) -> InventoryMySQLService:
+    repo = MySQLRepository(db)
+    return InventoryMySQLService(repo)
+
+
+def item_response(item: Item, message: str) -> dict:
+    return {
+        "status": "success",
+        "message": message,
+        "item": {
+            "pid": item.pid,
+            "name": item.name,
+            "current_qty": item.current_qty,
+            "buyer": item.buyer,
+            "shipper": item.shipper,
+        },
+    }
+
+
+@app.on_event("startup")
+def startup() -> None:
+    Base.metadata.create_all(bind=engine)
+
+
+@app.get("/")
+def read_root() -> dict:
+    return {"status": "ok", "message": "Inventory MySQL API is running"}
+
+
+@app.get("/item/{pid}")
+def get_item(pid: str, db: Session = Depends(get_db)) -> dict:
+    service = get_service(db)
 
     try:
-        items = db.query(Inventory).all()
-        print("Current items:")
-        for item in items:
-            print(item.pid, item.item_name, item.qty, item.receiver, item.shipper)
+        item = service.get_item(pid)
+        return item_response(item, "Item found")
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error") from exc
 
-    finally:
-        db.close() 
 
-if __name__ == "__main__":
-    create_tables()
-    insert_sample_item()
-    query_items()
+@app.post("/inventory/in")
+def inventory_in(req: InventoryRequest, db: Session = Depends(get_db)) -> dict:
+    service = get_service(db)
+
+    try:
+        item = service.inventory_in(
+            pid=req.pid,
+            name=req.name,
+            qty=req.qty,
+            receiver=req.receiver,
+            shipper=req.shipper,
+        )
+        return item_response(item, "Inventory-in success")
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error") from exc
+
+
+@app.post("/inventory/out")
+def inventory_out(req: InventoryRequest, db: Session = Depends(get_db)) -> dict:
+    service = get_service(db)
+
+    try:
+        item = service.inventory_out(
+            pid=req.pid,
+            name=req.name,
+            qty=req.qty,
+            receiver=req.receiver,
+            shipper=req.shipper,
+        )
+        return item_response(item, "Inventory-out success")
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error") from exc

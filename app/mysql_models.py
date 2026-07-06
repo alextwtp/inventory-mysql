@@ -1,6 +1,9 @@
 from sqlalchemy import Column, DateTime, Integer, String, func, CheckConstraint
 from sqlalchemy.orm import validates
-from db import Base
+try:
+    from app.db import Base
+except ImportError:
+    from db import Base
 
 
 class Inventory(Base):
