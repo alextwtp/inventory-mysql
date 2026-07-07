@@ -2,7 +2,6 @@
 
 ![CI](https://github.com/alextwtp/inventory-mysql/actions/workflows/ci.yml/badge.svg)
 
-
 # Inventory Management System
 
 A lightweight inventory management system for daily stock IN / OUT operations.
@@ -14,13 +13,16 @@ This project started as a small internal inventory tool for real operational use
 ## Features
 
 * Inventory IN / OUT operations
-* Excel-based inventory storage
+* Excel-based inventory storage as the stable baseline
 * GUI client for daily operation
 * FastAPI backend APIs
 * MySQL integration with SQLAlchemy
 * Docker Compose environment for MySQL
+* Service / repository separation
+* API-layer tests with fake service objects
 * Unit tests with pytest
 * GitHub Actions CI for automated testing
+* Docker Hub image publishing from the master branch
 * Sample inventory file for testing and demo usage
 
 ---
@@ -30,21 +32,29 @@ This project started as a small internal inventory tool for real operational use
 ```text
 inventory-mysql/
 ├── app/
-│   ├── fastapi_app.py
-│   ├── gui_app.py
-│   ├── inventory_service.py
-│   ├── excel_repository.py
-│   ├── mysql_models.py
+│   ├── main.py
 │   ├── db.py
+│   ├── mysql_models.py
+│   └── ...
+├── core/
+│   ├── inventory_service.py
+│   ├── inventory_mysql_service.py
+│   ├── item.py
+│   └── exceptions.py
+├── repository/
+│   ├── excel_repository.py
+│   └── mysql_repository.py
+├── data/
+│   └── sample_inventory.xlsx
+├── scripts/
 │   └── ...
 ├── tests/
-│   ├── test_service.py
-│   ├── test_api.py
+│   ├── test_inventory_mysql_service.py
+│   ├── test_inventory_mysql_api.py
 │   └── ...
-├── sample_inventory.xlsx
-├── requirements.txt
 ├── docker-compose.yml
 ├── Dockerfile
+├── requirements.txt
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
@@ -78,7 +88,7 @@ Create a `.env` file if running with MySQL or Docker Compose.
 Example:
 
 ```env
-DB_HOST=localhost
+DB_HOST=127.0.0.1
 DB_PORT=3307
 DB_USER=root
 DB_PASSWORD=your_password
@@ -87,133 +97,13 @@ DB_NAME=inventory_db
 
 When running inside Docker Compose, MySQL uses port `3306` internally.
 
-When connecting from the host machine, use port `3307`.
-
----
-
-## Run FastAPI Server
-
-```bash
-uvicorn app.fastapi_app:app --reload
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-## API Endpoints
-
-### Inventory IN
-
-```http
-POST /api/inventory/in
-```
-
-Example request:
-
-```json
-{
-  "pid": "P001",
-  "qty": 10,
-  "shipper": "ABC Supplier"
-}
-```
-
-### Inventory OUT
-
-```http
-POST /api/inventory/out
-```
-
-Example request:
-
-```json
-{
-  "pid": "P001",
-  "qty": 3,
-  "receiver": "Customer A"
-}
-```
-
----
-
-## Expected API Response
-
-Successful response:
-
-```json
-{
-  "success": true,
-  "data": {
-    "pid": "P001",
-    "current_qty": 17
-  },
-  "error": null
-}
-```
-
-Failed response example:
-
-```json
-{
-  "success": false,
-  "data": null,
-  "error": {
-    "code": "ITEM_NOT_FOUND",
-    "message": "Item not found"
-  }
-}
-```
-
----
-
-## Run GUI Client
-
-Start the FastAPI server first:
-
-```bash
-uvicorn app.fastapi_app:app --reload
-```
-
-Then run the GUI client:
-
-```bash
-python3 ui/gui_app.py
-```
-
-The GUI sends requests to the FastAPI backend.
-
----
-
-## Run Official Tests
-
-Run all tests:
-
-```bash
-pytest -q
-```
-
-Run tests with coverage:
-
-```bash
-pytest --cov=app --cov-report=term-missing
-```
-
-Expected result:
-
-```text
-All tests passed
-```
+When connecting from the host machine or WSL, use the host-mapped port `3307`.
 
 ---
 
 ## Run MySQL with Docker Compose
 
-Start MySQL container:
+Start the MySQL container:
 
 ```bash
 docker compose up -d
@@ -239,46 +129,124 @@ docker compose down -v
 
 ---
 
-## Manual Database Check Scripts
+## FastAPI + MySQL API Extension
 
-Run MySQL connection test:
+This project includes a FastAPI + MySQL version as a backend API extension.
 
-```bash
-python3 app/check_mysql_conn.py
-```
-
-Run database check:
-
-```bash
-python3 app/check_database.py
-```
-
-Run ORM check:
-
-```bash
-python3 app/check_inventory_orm.py
-```
-
-Expected result:
+The goal of this extension is to demonstrate a layered backend design:
 
 ```text
-Database connection successful
-Table created or verified successfully
-ORM operation completed successfully
+FastAPI endpoint
+→ Service layer
+→ Repository layer
+→ MySQL database
 ```
 
----
+The original Excel-based version is kept as the stable baseline, while the MySQL API version demonstrates how the same inventory business rules can be moved toward a database-backed backend service.
 
-## MySQL Connection Notes
+### API entry point
 
-For host machine connection:
+Start the FastAPI server:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Default API URL:
+
+```text
+http://127.0.0.1:8000
+```
+
+Interactive API docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Root health check:
+
+```http
+GET /
+```
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "message": "Inventory MySQL API is running"
+}
+```
+
+### API endpoints
+
+```http
+GET /item/{pid}
+POST /inventory/in
+POST /inventory/out
+```
+
+### Inventory-in example
+
+```bash
+curl -X POST http://127.0.0.1:8000/inventory/in \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pid": "A001",
+    "name": "Mouse",
+    "qty": 5,
+    "receiver": "",
+    "shipper": "Vendor A"
+  }'
+```
+
+### Inventory-out example
+
+```bash
+curl -X POST http://127.0.0.1:8000/inventory/out \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pid": "A001",
+    "name": "Mouse",
+    "qty": 2,
+    "receiver": "Customer A",
+    "shipper": ""
+  }'
+```
+
+### Get item example
+
+```bash
+curl http://127.0.0.1:8000/item/A001
+```
+
+### Expected successful response
+
+```json
+{
+  "status": "success",
+  "message": "Item found",
+  "item": {
+    "pid": "A001",
+    "name": "Mouse",
+    "current_qty": 10,
+    "buyer": "",
+    "shipper": ""
+  }
+}
+```
+
+### MySQL connection notes
+
+When running the FastAPI app from the host machine or WSL, use the host-mapped MySQL port:
 
 ```env
-DB_HOST=localhost
+DB_HOST=127.0.0.1
 DB_PORT=3307
 ```
 
-For container-to-container connection:
+When running inside Docker Compose, the app should connect to the MySQL service name and internal container port:
 
 ```env
 DB_HOST=mysql
@@ -296,15 +264,103 @@ Database: inventory_db
 
 ---
 
+## Run GUI Client
+
+The GUI version was the original daily-use interface and is kept as the stable Excel-based baseline.
+
+Start the FastAPI server first if using the API-connected GUI flow:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Then run the GUI entry script used by the current branch.
+
+Example:
+
+```bash
+python3 run_gui.py
+```
+
+---
+
+## Manual Database Check Scripts
+
+The project includes manual scripts for verifying MySQL connectivity, database setup, and ORM behavior.
+
+Example commands:
+
+```bash
+python3 app/check_mysql_conn.py
+python3 app/check_database.py
+python3 app/check_inventory_orm.py
+```
+
+Expected result:
+
+```text
+Database connection successful
+Table created or verified successfully
+ORM operation completed successfully
+```
+
+---
+
+## Run Official Tests
+
+Run all tests:
+
+```bash
+pytest -q
+```
+
+Current local result on the FastAPI + MySQL feature branch:
+
+```text
+58 passed, 1 skipped
+Required test coverage of 80% reached
+Total coverage: 85.12%
+```
+
+Run tests with coverage:
+
+```bash
+pytest --cov=. --cov-report=term-missing
+```
+
+### Testing strategy
+
+The MySQL API version includes API-layer tests using a fake service instead of a live MySQL database.
+
+This keeps the normal pytest suite fast and stable while still testing:
+
+```text
+- FastAPI request / response behavior
+- endpoint routing
+- service-layer call wiring
+- application error handling
+- database error rollback behavior
+```
+
+The real MySQL repository can be verified with a running MySQL container and manual check scripts. Normal unit tests avoid depending on live database state.
+
+---
+
 ## Sample Inventory File
 
 A sample Excel file is provided for testing and demo usage:
 
 ```text
-sample_inventory.xlsx
+data/sample_inventory.xlsx
 ```
 
 The sample file is safe to upload to GitHub because it does not contain private or sensitive data.
+
+Some Excel-based tests may modify this sample file during local testing. Before committing, restore it if needed:
+
+```bash
+git restore data/sample_inventory.xlsx
+```
 
 ---
 
@@ -312,7 +368,7 @@ The sample file is safe to upload to GitHub because it does not contain private 
 
 This project uses GitHub Actions to run automated tests.
 
-The CI workflow runs when code is pushed to GitHub or when a pull request is created.
+The CI workflow currently runs on the `master` branch. Feature branches can be pushed normally, but they may not appear in the GitHub Actions run list unless the workflow is configured to trigger on that branch or the branch is merged into `master`.
 
 Typical CI steps:
 
@@ -320,7 +376,8 @@ Typical CI steps:
 1. Checkout source code
 2. Set up Python
 3. Install dependencies
-4. Run pytest
+4. Run pytest with coverage gate
+5. Build and publish Docker image when applicable
 ```
 
 Expected result:
@@ -332,46 +389,9 @@ CI completed successfully
 
 ---
 
-## Current Status
-
-* GUI-based inventory tool: completed and used as the initial working version
-* Excel-based inventory storage: completed
-* FastAPI backend API: completed
-* GUI-to-API integration: completed
-* Unit tests: completed
-* MySQL basic integration: completed
-* Docker Compose MySQL environment: completed
-* GitHub Actions CI: completed
-* Dockerized application runtime: optional next step
-
----
-
-## Technical Highlights
-
-This project demonstrates a practical backend workflow based on a small real-world inventory use case.
-
-Main engineering points include:
-
-* Service / repository separation
-* Dependency injection
-* API request and response design
-* Centralized error handling
-* Unit testing with pytest
-* MySQL integration with SQLAlchemy
-* Docker Compose for local database environment
-* GitHub Actions for CI automation
-
-The goal is to keep the system lightweight while showing a clear path from a simple desktop tool to a more structured backend service.
-
----
-
-## License
-
-No license specified.
-
 ## Docker Hub Image Verification
 
-The Docker image has been published to Docker Hub:
+The Docker image has been published to Docker Hub from the master branch:
 
 ```bash
 docker pull alextwtpyeh/inventory-mysql:latest
@@ -389,33 +409,30 @@ Run the project test suite inside the Docker image:
 docker run --rm alextwtpyeh/inventory-mysql:latest pytest -q
 ```
 
-Expected result:
+Expected result may vary depending on whether the image was built from the master branch or a feature branch.
 
-```text
-41 passed, 1 skipped
-Required test coverage of 80% reached
-Total coverage: 87%
-```
+---
 
-## CI/CD and DockerHub Deployment
+## CI/CD and Docker Hub Deployment
 
 This project uses GitHub Actions for continuous integration and Docker image publishing.
 
 On each push or pull request to the `master` branch, the workflow runs the test suite with coverage checks on Python 3.10 and Python 3.11.
 
-When changes are pushed to the `master` branch and all tests pass, GitHub Actions builds the Docker image and pushes it to DockerHub as:
+When changes are pushed to the `master` branch and all tests pass, GitHub Actions builds the Docker image and pushes it to Docker Hub as:
 
 ```bash
 alextwtpyeh/inventory-mysql:latest
-
 ```
 
-DockerHub credentials are not stored in the repository. They are stored securely as GitHub repository secrets:
+Docker Hub credentials are not stored in the repository. They are stored securely as GitHub repository secrets:
 
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
+* `DOCKERHUB_USERNAME`
+* `DOCKERHUB_TOKEN`
 
-The workflow references these secrets during the DockerHub login step. This prevents sensitive credentials from being committed to source control.
+The workflow references these secrets during the Docker Hub login step. This prevents sensitive credentials from being committed to source control.
+
+---
 
 ## Security and Deployment Notes
 
@@ -425,7 +442,7 @@ This project does not commit real runtime credentials to the repository.
 * `.env.example` is provided as a safe template for local setup.
 * Real Excel data files are ignored by default.
 * `data/sample_inventory.xlsx` is included only as a safe sample file.
-* DockerHub credentials are stored as GitHub repository secrets and referenced by the GitHub Actions workflow.
+* Docker Hub credentials are stored as GitHub repository secrets and referenced by the GitHub Actions workflow.
 * The Docker image build and push job runs only after tests pass and only on pushes to the `master` branch.
 
 The deployment setup was verified with Docker Compose:
@@ -436,3 +453,46 @@ The deployment setup was verified with Docker Compose:
 * basic database check
 * ORM insert/query check
 * pytest with coverage gate
+
+---
+
+## Current Status
+
+* GUI-based inventory tool: completed and used as the initial working version
+* Excel-based inventory storage: completed and kept as the stable baseline
+* FastAPI backend API: completed
+* GUI-to-API integration: completed
+* MySQL repository extension: completed
+* FastAPI + MySQL API path: completed
+* API-layer tests with fake service: completed
+* Docker Compose MySQL environment: completed
+* GitHub Actions CI: completed on master branch
+* Docker Hub image publishing: completed on master branch
+
+---
+
+## Technical Highlights
+
+This project demonstrates a practical backend workflow based on a small real-world inventory use case.
+
+Main engineering points include:
+
+* Service / repository separation
+* Dependency injection
+* API request and response design
+* Centralized error handling
+* Unit testing with pytest
+* API-layer tests without requiring a live database
+* MySQL integration with SQLAlchemy
+* Docker Compose for local database environment
+* GitHub Actions for CI automation
+* Docker Hub publishing with repository secrets
+* Environment variable and sample-data safety controls
+
+The goal is to keep the system lightweight while showing a clear path from a simple desktop tool to a more structured backend service.
+
+---
+
+## License
+
+No license specified.
