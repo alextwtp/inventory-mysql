@@ -2,17 +2,12 @@ name: GitHub Actions CI workflow
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      - feature/fastapi-mysql
   pull_request:
-    branches: [master]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11"]
+    branches:
+      - master
 
     steps:
       - name: Checkout source code
