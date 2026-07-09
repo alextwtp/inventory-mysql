@@ -493,6 +493,20 @@ The goal is to keep the system lightweight while showing a clear path from a sim
 
 ---
 
+## Future Improvements / Design Considerations
+
+Beyond the current FastAPI + MySQL implementation, the project can be extended in the following directions. These items are listed as design considerations and future improvements, not as completed features.
+
+- **Pagination and filtering:** Add pagination for large query results and inventory search responses to reduce memory usage and avoid loading too much data at once.
+- **Redis cache layer:** Introduce a cache layer such as Redis for high-frequency, mostly read-only queries, with clear TTL and invalidation rules.
+- **Database migration control:** Manage schema changes with a migration tool such as Alembic for SQLAlchemy/MySQL, or Flyway in a mixed-stack environment, so database changes are version-controlled and repeatable.
+- **Transaction and concurrency control:** Keep stock IN/OUT updates inside database transactions, and consider optimistic or pessimistic locking when concurrent updates may affect the same item.
+- **Schema design and indexing:** Keep the database schema normalized where practical, and add indexes for common lookup fields such as product ID to improve query performance.
+- **Backup and recovery planning:** Define backup/restore procedures and business recovery targets such as RPO and RTO. At the database-engine level, REDO/UNDO logs are part of crash recovery concepts, while application-level recovery should focus on tested restore procedures.
+
+---
+
 ## License
 
 No license specified.
+
