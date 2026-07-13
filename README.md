@@ -2,11 +2,13 @@
 
 ![CI](https://github.com/alextwtp/inventory-mysql/actions/workflows/ci.yml/badge.svg)
 
-# Inventory Management System
+## Inventory Management System
 
 A lightweight inventory management system for daily stock IN / OUT operations.
 
-This project started as a small internal inventory tool for real operational use in a small business environment. The first working version was built with a GUI and Excel-based storage. It was later extended with FastAPI, MySQL, Docker Compose, automated tests, and GitHub Actions CI to make the backend workflow more maintainable and production-oriented.
+This project started as a small internal inventory tool for real operational use in a small business environment. The first working version used a Tkinter GUI with Excel-based storage.
+
+It was later extended with FastAPI, MySQL, SQLAlchemy, Docker Compose, automated testing, GitHub Actions CI, and Docker Hub publishing to demonstrate a more maintainable and production-oriented backend workflow.
 
 ---
 
@@ -14,62 +16,132 @@ This project started as a small internal inventory tool for real operational use
 
 * Inventory IN / OUT operations
 * Excel-based inventory storage as the stable baseline
-* GUI client for daily operation
+* Tkinter GUI for daily operation
 * FastAPI backend APIs
 * MySQL integration with SQLAlchemy
-* Docker Compose environment for MySQL
-* Service / repository separation
-* API-layer tests with fake service objects
-* Unit tests with pytest
-* GitHub Actions CI for automated testing
-* Docker Hub image publishing from the master branch
-* Sample inventory file for testing and demo usage
+* Service and repository layer separation
+* Dependency injection
+* Business-rule validation and error handling
+* Docker Compose environment
+* Automated tests with pytest
+* Coverage enforcement in CI
+* GitHub Actions CI/CD
+* Docker Hub image publishing
+* Safe sample inventory data
+
+---
+
+## Architecture
+
+The project contains two related execution paths.
+
+### Excel-Based GUI Baseline
+
+```text
+run_gui.py
+    ↓
+Tkinter GUI
+    ↓
+InventoryService
+    ↓
+ExcelRepository
+    ↓
+Excel File
+```
+
+### FastAPI + MySQL Backend
+
+```text
+HTTP Client / Swagger UI
+    ↓
+FastAPI Endpoint
+    ↓
+InventoryMySQLService
+    ↓
+MySQLRepository
+    ↓
+SQLAlchemy
+    ↓
+MySQL Database
+```
+
+The Excel-based GUI is retained as the stable original implementation. The FastAPI + MySQL path demonstrates how the same inventory business rules can be moved into a database-backed backend service.
 
 ---
 
 ## Project Structure
 
+Key project files and directories:
+
 ```text
 inventory-mysql/
+├── api/
+│   ├── __init__.py
+│   └── fastapi_app.py
 ├── app/
+│   ├── __init__.py
 │   ├── main.py
 │   ├── db.py
 │   ├── mysql_models.py
-│   └── ...
+│   ├── check_mysql_conn.py
+│   ├── check_database.py
+│   └── check_inventory_orm.py
+├── config/
+│   ├── __init__.py
+│   └── constants.py
 ├── core/
+│   ├── __init__.py
+│   ├── exceptions.py
 │   ├── inventory_service.py
 │   ├── inventory_mysql_service.py
-│   ├── item.py
-│   └── exceptions.py
-├── repository/
-│   ├── excel_repository.py
-│   └── mysql_repository.py
+│   └── item.py
 ├── data/
 │   └── sample_inventory.xlsx
+├── repository/
+│   ├── __init__.py
+│   ├── excel_repository.py
+│   └── mysql_repository.py
 ├── scripts/
-│   └── ...
+│   └── create_tables.py
 ├── tests/
-│   ├── test_inventory_mysql_service.py
+│   ├── conftest.py
+│   ├── test_fastapi.py
+│   ├── test_repository.py
+│   ├── test_service.py
 │   ├── test_inventory_mysql_api.py
-│   └── ...
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
+│   └── test_inventory_mysql_service.py
+├── ui/
+│   ├── __init__.py
+│   └── gui_app.py
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
+├── .env.example
+├── docker-compose.yml
+├── Dockerfile
+├── pytest.ini
+├── requirements.txt
+├── run_api.py
+├── run_gui.py
 └── README.md
 ```
+
+Generated cache files, local environment files, database data, test artifacts, and private Excel files are intentionally omitted from this structure.
 
 ---
 
 ## Requirements
 
+### Local Development
+
 * Python 3.10+
-* MySQL 8.x
+* pip
+* MySQL 8.x for the database-backed API
+
+### Container-Based Execution
+
 * Docker
 * Docker Compose
-* pip
 
 ---
 
@@ -83,9 +155,13 @@ pip install -r requirements.txt
 
 ## Environment Variables
 
-Create a `.env` file if running with MySQL or Docker Compose.
+Create a local `.env` file based on `.env.example`:
 
-Example:
+```bash
+cp .env.example .env
+```
+
+Example host configuration:
 
 ```env
 DB_HOST=127.0.0.1
@@ -95,58 +171,102 @@ DB_PASSWORD=your_password
 DB_NAME=inventory_db
 ```
 
-When running inside Docker Compose, MySQL uses port `3306` internally.
+The real `.env` file is excluded by `.gitignore` and must not be committed.
 
-When connecting from the host machine or WSL, use the host-mapped port `3307`.
+### MySQL Port Mapping
+
+When connecting from the host machine or WSL:
+
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3307
+```
+
+When the application connects to MySQL inside Docker Compose:
+
+```env
+DB_HOST=mysql
+DB_PORT=3306
+```
+
+Example MySQL Workbench connection:
+
+```text
+Host: 127.0.0.1
+Port: 3307
+User: root
+Database: inventory_db
+```
+
+---
+
+## Run the Excel-Based GUI
+
+The GUI version is the original stable implementation and uses the Excel repository.
+
+Run the GUI from the project root:
+
+```bash
+python3 run_gui.py
+```
+
+On Windows, this can also be run as:
+
+```powershell
+python run_gui.py
+```
+
+The GUI entry script creates the Tkinter application and injects the Excel repository and inventory service.
+
+The MySQL FastAPI server is not required when running this direct Excel-based GUI path.
 
 ---
 
 ## Run MySQL with Docker Compose
 
-Start the MySQL container:
+Start the configured services:
 
 ```bash
 docker compose up -d
 ```
 
-Check running containers:
+Check service status:
 
 ```bash
 docker compose ps
 ```
 
-Stop containers:
+View service logs:
+
+```bash
+docker compose logs
+```
+
+Stop the services:
 
 ```bash
 docker compose down
 ```
 
-Remove containers and database volume:
+Remove the services and the MySQL data volume:
 
 ```bash
 docker compose down -v
 ```
 
+> Warning: `docker compose down -v` removes the database volume and its stored data.
+
 ---
 
-## FastAPI + MySQL API Extension
+## Run the FastAPI + MySQL API
 
-This project includes a FastAPI + MySQL version as a backend API extension.
+Start MySQL first:
 
-The goal of this extension is to demonstrate a layered backend design:
-
-```text
-FastAPI endpoint
-→ Service layer
-→ Repository layer
-→ MySQL database
+```bash
+docker compose up -d
 ```
 
-The original Excel-based version is kept as the stable baseline, while the MySQL API version demonstrates how the same inventory business rules can be moved toward a database-backed backend service.
-
-### API entry point
-
-Start the FastAPI server:
+Then start the FastAPI server from the project root:
 
 ```bash
 uvicorn app.main:app --reload
@@ -158,13 +278,17 @@ Default API URL:
 http://127.0.0.1:8000
 ```
 
-Interactive API docs:
+Interactive Swagger documentation:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-Root health check:
+---
+
+## FastAPI + MySQL Endpoints
+
+### Health Check
 
 ```http
 GET /
@@ -179,15 +303,25 @@ Example response:
 }
 ```
 
-### API endpoints
+### Get an Item
 
 ```http
 GET /item/{pid}
-POST /inventory/in
-POST /inventory/out
 ```
 
-### Inventory-in example
+Example:
+
+```bash
+curl http://127.0.0.1:8000/item/A001
+```
+
+### Inventory IN
+
+```http
+POST /inventory/in
+```
+
+Example request:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/inventory/in \
@@ -201,7 +335,13 @@ curl -X POST http://127.0.0.1:8000/inventory/in \
   }'
 ```
 
-### Inventory-out example
+### Inventory OUT
+
+```http
+POST /inventory/out
+```
+
+Example request:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/inventory/out \
@@ -215,13 +355,11 @@ curl -X POST http://127.0.0.1:8000/inventory/out \
   }'
 ```
 
-### Get item example
+---
 
-```bash
-curl http://127.0.0.1:8000/item/A001
-```
+## Expected MySQL API Response
 
-### Expected successful response
+Example successful response:
 
 ```json
 {
@@ -237,66 +375,35 @@ curl http://127.0.0.1:8000/item/A001
 }
 ```
 
-### MySQL connection notes
+Application-level errors are converted into appropriate HTTP responses.
 
-When running the FastAPI app from the host machine or WSL, use the host-mapped MySQL port:
-
-```env
-DB_HOST=127.0.0.1
-DB_PORT=3307
-```
-
-When running inside Docker Compose, the app should connect to the MySQL service name and internal container port:
-
-```env
-DB_HOST=mysql
-DB_PORT=3306
-```
-
-Workbench connection example:
-
-```text
-Host: 127.0.0.1
-Port: 3307
-User: root
-Database: inventory_db
-```
+Unexpected SQLAlchemy errors trigger a database rollback and return an HTTP 500 database error response.
 
 ---
 
-## Run GUI Client
+## Manual Database Checks
 
-The GUI version was the original daily-use interface and is kept as the stable Excel-based baseline.
+The project includes manual scripts for verifying MySQL connectivity, table setup, and ORM behavior.
 
-Start the FastAPI server first if using the API-connected GUI flow:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Then run the GUI entry script used by the current branch.
-
-Example:
-
-```bash
-python3 run_gui.py
-```
-
----
-
-## Manual Database Check Scripts
-
-The project includes manual scripts for verifying MySQL connectivity, database setup, and ORM behavior.
-
-Example commands:
+Run the MySQL connection check:
 
 ```bash
 python3 app/check_mysql_conn.py
+```
+
+Run the database check:
+
+```bash
 python3 app/check_database.py
+```
+
+Run the ORM check:
+
+```bash
 python3 app/check_inventory_orm.py
 ```
 
-Expected result:
+Typical expected results:
 
 ```text
 Database connection successful
@@ -304,17 +411,25 @@ Table created or verified successfully
 ORM operation completed successfully
 ```
 
+These scripts are intended for manual integration verification and are separate from the normal unit-test suite.
+
 ---
 
 ## Run Official Tests
 
-Run all tests:
+Run the complete test suite:
 
 ```bash
 pytest -q
 ```
 
-Current local result on the FastAPI + MySQL feature branch:
+Run tests with coverage details:
+
+```bash
+pytest --cov=. --cov-report=term-missing
+```
+
+Last verified local result for the FastAPI + MySQL extension:
 
 ```text
 58 passed, 1 skipped
@@ -322,191 +437,298 @@ Required test coverage of 80% reached
 Total coverage: 85.12%
 ```
 
-Run tests with coverage:
+### Testing Strategy
 
-```bash
-pytest --cov=. --cov-report=term-missing
-```
+The test suite covers:
 
-### Testing strategy
+* Inventory business rules
+* Inventory IN and OUT operations
+* Invalid quantity handling
+* Insufficient-stock handling
+* Item-not-found behavior
+* Repository behavior
+* FastAPI request and response behavior
+* Endpoint routing
+* Service dependency wiring
+* Application error handling
+* Database error rollback behavior
 
-The MySQL API version includes API-layer tests using a fake service instead of a live MySQL database.
+API-layer tests use fake service objects where appropriate. This keeps the normal test suite fast and stable without requiring a live MySQL database for every test run.
 
-This keeps the normal pytest suite fast and stable while still testing:
-
-```text
-- FastAPI request / response behavior
-- endpoint routing
-- service-layer call wiring
-- application error handling
-- database error rollback behavior
-```
-
-The real MySQL repository can be verified with a running MySQL container and manual check scripts. Normal unit tests avoid depending on live database state.
+The real MySQL path is verified separately through Docker Compose and the manual database-check scripts.
 
 ---
 
-## Sample Inventory File
+## Sample Inventory Data
 
-A sample Excel file is provided for testing and demo usage:
+A safe sample Excel file is included for testing and demonstration:
 
 ```text
 data/sample_inventory.xlsx
 ```
 
-The sample file is safe to upload to GitHub because it does not contain private or sensitive data.
+The sample file contains demonstration data only and does not contain confidential business information.
 
-Some Excel-based tests may modify this sample file during local testing. Before committing, restore it if needed:
+Some Excel-based tests may modify the sample file locally. Restore it before committing when necessary:
 
 ```bash
 git restore data/sample_inventory.xlsx
 ```
 
+Real operational Excel files are excluded from source control.
+
 ---
 
 ## GitHub Actions CI
 
-This project uses GitHub Actions to run automated tests.
+The project uses GitHub Actions for automated testing and Docker image publishing.
 
-The CI workflow currently runs on the `master` branch. Feature branches can be pushed normally, but they may not appear in the GitHub Actions run list unless the workflow is configured to trigger on that branch or the branch is merged into `master`.
-
-Typical CI steps:
+The CI workflow runs on the `master` branch and performs the following general steps:
 
 ```text
 1. Checkout source code
-2. Set up Python
-3. Install dependencies
-4. Run pytest with coverage gate
-5. Build and publish Docker image when applicable
+2. Set up Python 3.10 and Python 3.11
+3. Install project dependencies
+4. Run pytest
+5. Enforce the coverage threshold
+6. Build the Docker image after successful tests
+7. Publish the image to Docker Hub when applicable
 ```
 
-Expected result:
+The configured minimum test coverage is:
 
 ```text
-All tests passed
-CI completed successfully
+80%
 ```
+
+A failed test or failed coverage check prevents the deployment stage from continuing.
 
 ---
 
-## Docker Hub Image Verification
+## Docker Hub Image
 
-The Docker image has been published to Docker Hub from the master branch:
+The published Docker image is available as:
+
+```text
+alextwtpyeh/inventory-mysql
+```
+
+Pull the versioned release:
+
+```bash
+docker pull alextwtpyeh/inventory-mysql:v2.0.0
+```
+
+Pull the latest image:
 
 ```bash
 docker pull alextwtpyeh/inventory-mysql:latest
 ```
 
-Basic runtime verification:
+Basic image verification:
 
 ```bash
-docker run --rm alextwtpyeh/inventory-mysql:latest python --version
+docker run --rm alextwtpyeh/inventory-mysql:v2.0.0 python --version
 ```
 
-Run the project test suite inside the Docker image:
+Run the packaged test suite:
 
 ```bash
-docker run --rm alextwtpyeh/inventory-mysql:latest pytest -q
+docker run --rm alextwtpyeh/inventory-mysql:v2.0.0 pytest -q
 ```
-
-Expected result may vary depending on whether the image was built from the master branch or a feature branch.
 
 ---
 
 ## CI/CD and Docker Hub Deployment
 
-This project uses GitHub Actions for continuous integration and Docker image publishing.
+On a successful push to the `master` branch:
 
-On each push or pull request to the `master` branch, the workflow runs the test suite with coverage checks on Python 3.10 and Python 3.11.
-
-When changes are pushed to the `master` branch and all tests pass, GitHub Actions builds the Docker image and pushes it to Docker Hub as:
-
-```bash
-alextwtpyeh/inventory-mysql:latest
+```text
+Source Push
+    ↓
+GitHub Actions
+    ↓
+pytest and Coverage Gate
+    ↓
+Docker Image Build
+    ↓
+Docker Hub Login
+    ↓
+Docker Image Push
 ```
 
-Docker Hub credentials are not stored in the repository. They are stored securely as GitHub repository secrets:
+Docker Hub credentials are not stored in the repository.
+
+They are configured as GitHub repository secrets:
 
 * `DOCKERHUB_USERNAME`
 * `DOCKERHUB_TOKEN`
 
-The workflow references these secrets during the Docker Hub login step. This prevents sensitive credentials from being committed to source control.
+The GitHub Actions workflow references these secrets during the Docker Hub login step.
 
 ---
 
-## Security and Deployment Notes
+## Security and Data-Safety Controls
 
-This project does not commit real runtime credentials to the repository.
+The project follows several basic source-control and deployment safety practices:
 
-* Real environment variables are stored in `.env`, which is excluded by `.gitignore`.
-* `.env.example` is provided as a safe template for local setup.
-* Real Excel data files are ignored by default.
-* `data/sample_inventory.xlsx` is included only as a safe sample file.
-* Docker Hub credentials are stored as GitHub repository secrets and referenced by the GitHub Actions workflow.
-* The Docker image build and push job runs only after tests pass and only on pushes to the `master` branch.
+* Real runtime credentials are stored in `.env`.
+* `.env` is excluded by `.gitignore`.
+* `.env.example` contains only safe placeholder values.
+* Real operational Excel files are excluded from Git.
+* Only safe sample inventory data is committed.
+* Docker Hub credentials are stored as GitHub repository secrets.
+* Docker images are published only after automated tests pass.
+* The coverage threshold is enforced before deployment.
+* Database connection settings are passed through environment variables.
+* Private credentials are not hard-coded in the source code.
 
-The deployment setup was verified with Docker Compose:
+---
 
-* Python app container build
-* MySQL 8.4 container startup
-* app-to-MySQL connection check
-* basic database check
-* ORM insert/query check
-* pytest with coverage gate
+## Platform Notes
+
+### Excel File Lock Detection under WSL
+
+When the Excel-based version runs inside WSL while an Excel file is open in Windows Excel, the Linux process may not reliably detect the Windows file lock.
+
+This is caused by differences between Windows and Linux file-lock behavior.
+
+File-in-use detection works more reliably when the Excel-based application runs directly on Windows.
+
+### Host and Container Ports
+
+MySQL uses:
+
+```text
+3306 inside the Docker network
+3307 from the host machine
+```
+
+The FastAPI server normally uses:
+
+```text
+8000
+```
 
 ---
 
 ## Current Status
 
-* GUI-based inventory tool: completed and used as the initial working version
-* Excel-based inventory storage: completed and kept as the stable baseline
-* FastAPI backend API: completed
-* GUI-to-API integration: completed
-* MySQL repository extension: completed
-* FastAPI + MySQL API path: completed
-* API-layer tests with fake service: completed
-* Docker Compose MySQL environment: completed
-* GitHub Actions CI: completed on master branch
-* Docker Hub image publishing: completed on master branch
+Current stable release:
+
+```text
+v2.0.0
+```
+
+Completed components:
+
+* Excel-based inventory tool
+* Tkinter GUI
+* Inventory IN / OUT business rules
+* Service and repository separation
+* FastAPI backend
+* MySQL repository
+* SQLAlchemy ORM integration
+* FastAPI + MySQL API path
+* Dependency injection
+* Application error handling
+* Unit and API testing
+* Docker Compose environment
+* Coverage enforcement
+* GitHub Actions CI
+* Docker Hub image publishing
+* Versioned Docker image
+* Safe environment-variable handling
+* Safe sample-data handling
 
 ---
 
 ## Technical Highlights
 
-This project demonstrates a practical backend workflow based on a small real-world inventory use case.
+This project demonstrates the modernization of a small operational desktop tool into a structured backend system.
 
-Main engineering points include:
+Main engineering concepts include:
 
-* Service / repository separation
+* Layered architecture
+* Service and repository separation
 * Dependency injection
-* API request and response design
-* Centralized error handling
+* Domain-oriented business rules
+* REST API design
+* Pydantic request validation
+* SQLAlchemy ORM
+* MySQL integration
+* Transaction rollback on database errors
 * Unit testing with pytest
-* API-layer tests without requiring a live database
-* MySQL integration with SQLAlchemy
-* Docker Compose for local database environment
-* GitHub Actions for CI automation
-* Docker Hub publishing with repository secrets
-* Environment variable and sample-data safety controls
-
-The goal is to keep the system lightweight while showing a clear path from a simple desktop tool to a more structured backend service.
+* API testing with fake dependencies
+* Docker Compose
+* GitHub Actions CI/CD
+* Coverage enforcement
+* Docker Hub publishing
+* Environment-variable security
+* Sample-data isolation
 
 ---
 
-## Future Improvements / Design Considerations
+## Future Improvements and Design Considerations
 
-Beyond the current FastAPI + MySQL implementation, the project can be extended in the following directions. These items are listed as design considerations and future improvements, not as completed features.
+The following items are future design considerations and are not presented as completed features.
 
-- **Pagination and filtering:** Add pagination for large query results and inventory search responses to reduce memory usage and avoid loading too much data at once.
-- **Redis cache layer:** Introduce a cache layer such as Redis for high-frequency, mostly read-only queries, with clear TTL and invalidation rules.
-- **Database migration control:** Manage schema changes with a migration tool such as Alembic for SQLAlchemy/MySQL, or Flyway in a mixed-stack environment, so database changes are version-controlled and repeatable.
-- **Transaction and concurrency control:** Keep stock IN/OUT updates inside database transactions, and consider optimistic or pessimistic locking when concurrent updates may affect the same item.
-- **Schema design and indexing:** Keep the database schema normalized where practical, and add indexes for common lookup fields such as product ID to improve query performance.
-- **Backup and recovery planning:** Define backup/restore procedures and business recovery targets such as RPO and RTO. At the database-engine level, REDO/UNDO logs are part of crash recovery concepts, while application-level recovery should focus on tested restore procedures.
+### Pagination and Filtering
+
+Add pagination and filtering for larger inventory result sets to avoid loading excessive data into memory.
+
+### Redis Cache Layer
+
+Introduce Redis for selected high-frequency read operations, with explicit TTL and cache invalidation rules.
+
+Potential cache risks to consider include:
+
+* Cache penetration
+* Cache breakdown
+* Cache avalanche
+* Stale-data handling
+
+### Database Migration Control
+
+Introduce Alembic for version-controlled SQLAlchemy schema migrations.
+
+A migration workflow would make database changes repeatable across development, testing, and deployment environments.
+
+### Transaction and Concurrency Control
+
+Keep stock updates inside database transactions.
+
+For concurrent updates to the same product, possible strategies include:
+
+* Optimistic locking
+* Pessimistic locking
+* Appropriate transaction isolation levels
+
+### Schema Design and Indexing
+
+Maintain normalized data structures where practical and add indexes for frequently searched fields such as product ID.
+
+### Backup and Recovery
+
+Define database backup and restore procedures and establish recovery targets such as:
+
+* Recovery Point Objective (RPO)
+* Recovery Time Objective (RTO)
+
+Database-engine REDO and UNDO logs support crash recovery, while application-level recovery requires tested backup and restore procedures.
+
+### Scaling Considerations
+
+For larger deployments, evaluate the trade-offs between:
+
+* Vertical scaling
+* Horizontal scaling
+* Read replicas
+* Connection pooling
+* Stateless API deployment
 
 ---
 
 ## License
 
 No license specified.
-
